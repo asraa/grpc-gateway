@@ -2,6 +2,13 @@ on:
   push:
     tags:
       - v2.[0-9]+.[0-9]+
+  # For testing and backfilling
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Branch, tag or SHA to run build and provenance on'
+        required: false
+        default: ${{ github.ref }}
 permissions:
   contents: read
 name: release
@@ -15,14 +22,24 @@ jobs:
     steps:
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
         with:
+          # Checkout at the tag_name, which by default is main.
+          ref: ${{ inputs.tag_name }}
           fetch-depth: 0
       - uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3
         with:
           check-latest: true
       - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757 # tag=v3
         id: run-goreleaser
+        if: github.event_name == 'push' # creates a new release
         with:
           args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757 # tag=v3
+        id: run-goreleaser
+        if: github.event_name == 'workflow_dispatch' # just dry-run
+        with:
+          args: release --rm-dist --skip-publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate subject
@@ -43,7 +60,7 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.2.1
     with:
       base64-subjects: "${{ needs.goreleaser.outputs.hashes }}"
-      upload-assets: true # upload to a new release
+      upload-assets: github.event_name == 'push' # upload to a new release when pushing via tag
 
   push_bsr_plugins:
     runs-on: ubuntu-latest
