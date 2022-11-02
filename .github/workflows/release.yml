@@ -28,14 +28,14 @@ jobs:
         with:
           check-latest: true
       - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757 # tag=v3
-        id: run-goreleaser
+        id: run-goreleaser-push
         if: github.event_name == 'push' # creates a new release
         with:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757 # tag=v3
-        id: run-goreleaser
+        id: run-goreleaser-workflow-dispatch
         if: github.event_name == 'workflow_dispatch' # just dry-run
         with:
           args: release --rm-dist --skip-publish
