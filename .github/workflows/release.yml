@@ -27,15 +27,25 @@ jobs:
       - uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3
         with:
           check-latest: true
+      - name: Generate goreleaser args
+        id: args
+        run: |
+          set -euo pipefail
+
+          args='release --rm-dist'
+          if [[ "$GITHUB_REF" != refs/tags/* ]]; then
+            args+=' --snapshot'
+          fi
+          echo "args=$args" >> $GITHUB_OUTPUT
       - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757 # tag=v3
-        id: run-goreleaser-push
+        id: run-goreleaser
         if: github.event_name == 'push' # creates a new release
         with:
-          args: release --rm-dist
+          args: ${{ steps.args.outputs.args }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757 # tag=v3
-        id: run-goreleaser-workflow-dispatch
+        id: run-goreleaser
         if: github.event_name == 'workflow_dispatch' # just dry-run
         with:
           args: release --rm-dist --skip-publish
