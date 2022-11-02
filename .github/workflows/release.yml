@@ -8,7 +8,6 @@ on:
       tag_name:
         description: 'Branch, tag or SHA to run build and provenance on'
         required: false
-        default: ${{ github.ref }}
 permissions:
   contents: read
 name: release
@@ -22,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3
         with:
-          # Checkout at the tag_name, which by default is main.
+          # Checkout at the tag_name, when empty it is the GITHUB_REF of the triggering event.
           ref: ${{ inputs.tag_name }}
           fetch-depth: 0
       - uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # tag=v3
